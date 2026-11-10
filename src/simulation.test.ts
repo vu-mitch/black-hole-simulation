@@ -74,6 +74,23 @@ describe("flight", () => {
     expect(length(sim.ship.pos)).toBeGreaterThan(0.05);
   });
 
+  it("keeps the fall through the horizon visible even when time is sped up", () => {
+    const sim = new Simulation();
+    sim.loadPreset("plunge");
+    sim.timeFactor = 16;
+    let sawInside = false;
+    let timeInside = 0;
+    for (let i = 0; i < 800 && sim.status === "flying"; i++) {
+      const events = sim.update(0.1, STILL);
+      const radius = length(sim.ship.pos);
+      if (radius < 1 && radius > 0.05) sawInside = true;
+      if (events.includes("singularity")) timeInside = sim.telemetry().timeInsideHorizon ?? 0;
+    }
+    expect(sim.status).toBe("singularity");
+    expect(sawInside).toBe(true);
+    expect(timeInside).toBeGreaterThan(0.05);
+  });
+
   it("reaches the singularity in free fall and stops there", () => {
     const sim = new Simulation();
     sim.loadPreset("plunge");

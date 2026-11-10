@@ -202,7 +202,9 @@ export class Simulation {
     const before = this.ship;
     const wasInside = length(before.pos) < RS;
     const rate = this.currentRate();
-    const dtau = dtReal * rate;
+    // One frame must not fall from outside the horizon all the way to the
+    // singularity, or the crossing is invisible and its clock reads zero.
+    const dtau = Math.min(dtReal * rate, 0.18 * Math.max(length(before.pos), 0.08) ** 1.05);
 
     const { right, up, forward } = this.orientation;
     let direction = addScaled(addScaled(scale(right, input.thrust[0]), up, input.thrust[1]), forward, input.thrust[2]);
@@ -229,7 +231,9 @@ export class Simulation {
 
     const isInside = r < RS;
     if (isInside && !wasInside) {
-      this.horizonCrossingTau = this.ship.tau;
+      const r0 = length(before.pos);
+      const fraction = (r0 - RS) / Math.max(1e-9, r0 - r);
+      this.horizonCrossingTau = before.tau + Math.min(1, Math.max(0, fraction)) * (this.ship.tau - before.tau);
       events.push("enteredHorizon");
     } else if (!isInside && wasInside) {
       this.horizonCrossingTau = null;
