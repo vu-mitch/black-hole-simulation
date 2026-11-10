@@ -1,0 +1,575 @@
+:root {
+  --panel: rgba(8, 10, 16, 0.62);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: #e8ecf4;
+  --muted: #8c96aa;
+  --accent: #ffb055;
+  --danger: #ff5d5d;
+  --ok: #7fe0c3;
+  --warp: #b08cff;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  overscroll-behavior: none;
+}
+
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+#view.dragging {
+  cursor: grabbing;
+}
+
+.panel {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 5px;
+  margin-right: 3px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  font: 600 11px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------ telemetry */
+
+#telemetry {
+  top: 16px;
+  left: 16px;
+  width: 300px;
+  padding: 14px 16px 12px;
+}
+
+#telemetry header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#telemetry h1 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ok);
+}
+
+.badge[data-region="disk"],
+.badge[data-region="insideIsco"] {
+  color: var(--accent);
+}
+
+.badge[data-region="insidePhotonSphere"] {
+  color: #ff8a4c;
+}
+
+.badge[data-region="insideHorizon"] {
+  color: var(--danger);
+}
+
+#telemetry dl {
+  margin: 12px 0 0;
+}
+
+#telemetry dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#telemetry dt {
+  color: var(--muted);
+}
+
+#telemetry dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#telemetry dd b {
+  font-weight: 600;
+}
+
+#telemetry dd small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+#telemetry dd small:empty {
+  display: none;
+}
+
+#telemetry footer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+#gauge {
+  margin-top: 34px;
+  padding-bottom: 6px;
+}
+
+#gauge .track {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+#gauge .zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+}
+
+#gauge .zone.horizon {
+  left: 0;
+  background: linear-gradient(90deg, #000, #401010);
+  border: 1px solid rgba(255, 93, 93, 0.5);
+}
+
+#gauge .zone.disk {
+  background: linear-gradient(90deg, rgba(255, 220, 170, 0.9), rgba(255, 120, 40, 0.25));
+}
+
+#gauge .tick {
+  position: absolute;
+  top: -5px;
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+#gauge .tick span {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#gauge #gauge-tick-horizon span {
+  transform: translateX(-80%);
+}
+
+#gauge #gauge-tick-photon span {
+  transform: translateX(-12%);
+  bottom: 27px;
+}
+
+#gauge .marker {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 14px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+}
+
+/* ------------------------------------------------------------ messages */
+
+#banner,
+#toast {
+  position: fixed;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  max-width: min(520px, calc(100vw - 640px));
+  padding: 10px 16px;
+  border-radius: 10px;
+  text-align: center;
+  line-height: 1.45;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+#banner {
+  top: 16px;
+  border: 1px solid rgba(255, 93, 93, 0.55);
+  background: rgba(40, 6, 6, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#banner[data-kind="warp"] {
+  border-color: rgba(176, 140, 255, 0.6);
+  background: rgba(24, 12, 48, 0.72);
+}
+
+#banner strong {
+  display: block;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+#banner:empty,
+#toast:empty {
+  opacity: 0;
+  padding: 0;
+  border: 0;
+}
+
+#toast {
+  bottom: 196px;
+  background: rgba(8, 10, 16, 0.8);
+  border: 1px solid var(--border);
+  opacity: 0;
+}
+
+#toast.visible {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------ toolbar */
+
+#toolbar {
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 10px;
+}
+
+#toolbar .group {
+  display: flex;
+  gap: 4px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button[aria-pressed="true"] {
+  border-color: rgba(255, 176, 85, 0.6);
+  background: rgba(255, 176, 85, 0.16);
+}
+
+#btn-warp[aria-pressed="true"] {
+  border-color: rgba(176, 140, 255, 0.7);
+  background: rgba(176, 140, 255, 0.22);
+}
+
+/* ------------------------------------------------------------ help */
+
+#help {
+  top: 16px;
+  right: 16px;
+  width: 250px;
+  padding: 12px 16px;
+}
+
+#help[hidden] {
+  display: none;
+}
+
+#help h2 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#help ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 2;
+}
+
+#help p {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------------ cockpit marks */
+
+#reticle {
+  position: fixed;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+#reticle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
+  margin: -1px 0 0 -1px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+#hole-pointer {
+  position: fixed;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(255, 176, 85, 0.8));
+}
+
+#hole-pointer[hidden] {
+  display: none;
+}
+
+#hole-pointer svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--accent);
+}
+
+/* ------------------------------------------------------------ touch */
+
+#touch-controls {
+  position: fixed;
+  right: 16px;
+  bottom: 96px;
+  display: none;
+  flex-direction: column-reverse;
+  gap: 10px;
+}
+
+#touch-controls button {
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  font-size: 22px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (pointer: coarse) {
+  #touch-controls {
+    display: flex;
+  }
+}
+
+/* ------------------------------------------------------------ endings */
+
+#ending,
+#fatal {
+  position: fixed;
+  z-index: 4;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+}
+
+#ending[hidden],
+#fatal[hidden] {
+  display: none;
+}
+
+#ending {
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.85));
+  animation: fade-in 0.8s ease both;
+}
+
+#ending .card {
+  max-width: 440px;
+}
+
+#ending h2 {
+  margin: 0 0 12px;
+  font-size: 30px;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+#ending p {
+  margin: 0 0 20px;
+  color: #c3cad8;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#ending button {
+  padding: 10px 18px;
+  border-color: var(--border);
+  font-size: 14px;
+}
+
+#fatal {
+  background: #05060a;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------------------ small screens */
+
+@media (max-width: 1100px) {
+  #banner,
+  #toast {
+    max-width: min(620px, calc(100vw - 32px));
+  }
+
+  #banner {
+    top: auto;
+    bottom: 132px;
+  }
+}
+
+@media (max-width: 760px) {
+  #telemetry {
+    top: 8px;
+    left: 8px;
+    width: 232px;
+    padding: 10px 12px 8px;
+    font-size: 12px;
+  }
+
+  #telemetry dl > div:nth-child(n + 5),
+  #telemetry footer {
+    display: none;
+  }
+
+  #help {
+    display: none;
+  }
+
+  #banner {
+    top: auto;
+    bottom: 124px;
+  }
+
+  #toast {
+    bottom: 196px;
+  }
+
+  #toolbar {
+    bottom: 8px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    width: calc(100vw - 16px);
+    max-width: none;
+    scrollbar-width: none;
+  }
+
+  #toolbar kbd {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ending {
+    animation: none;
+  }
+}
